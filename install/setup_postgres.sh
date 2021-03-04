@@ -40,7 +40,10 @@ source $RUNDIR/install.cfg
 #PGSCRIPT
 #fi
 
-sudo -u postgres -h database psql reddit <<FUNCTIONSQL
+#fix later
+#export PGPASSWORD=password
+#sudo -u postgres -h database psql reddit <<FUNCTIONSQL
+psql -h database -p 5432 -U reddit reddit <<FUNCTIONSQL
 create or replace function hot(ups integer, downs integer, date timestamp with time zone) returns numeric as \$\$
     select round(cast(log(greatest(abs((\$1 * 2) + \$2), 1)) * sign((\$1 * 2) + \$2) + (date_part('epoch', \$3) - 1134028003) / 45000.0 as numeric), 7)
 \$\$ language sql immutable;
@@ -72,4 +75,4 @@ create or replace function domain(url text) returns text as \$\$
 \$\$ language sql immutable;
 FUNCTIONSQL
 
-sudo service postgresql restart
+#sudo service postgresql restart

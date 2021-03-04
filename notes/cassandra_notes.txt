@@ -1,0 +1,11 @@
+Cassandra Notes
+
+adding cassandra to the docker-compose file
+9160  Cassandra  1.2.19 original
+
+docker run --name some-cassandra --network mynetwork -v /home/parallels/saidit/data:/var/lib/cassandra -d cassandra:4.0
+
+example docker-compose with Cassandra online
+
+
+

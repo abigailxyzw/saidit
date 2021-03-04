@@ -15,3 +15,27 @@ psql -h database -p 5432 -U reddit reddit <<FUNCTIONSQL
 SELECT * FROM pg_catalog.pg_tables
 FUNCTIONSQL
 
+
+select round(cast(log(greatest(abs((\$1 * 2) + \$2), 1)) * sign((\$1 * 2) + \$2) + (date_part('epoch', \$3) - 1134028003) / 45000.0 as numeric), 7) language sql immutable;
+\l show the dbs
+
+
+nformational
+  (options: S = show system objects, + = additional detail)
+  \d[S+]                 list tables, views, and sequences
+  \d[S+]  NAME           describe table, view, sequence, or index
+  \da[S]  [PATTERN]      list aggregates
+  \db[+]  [PATTERN]      list tablespaces
+  \dc[S+] [PATTERN]      list conversions
+  \dC[+]  [PATTERN]      list casts
+  \dd[S]  [PATTERN]      show object descriptions not displayed elsewhere
+  \ddp    [PATTERN]      list default privileges
+  \dD[S+] [PATTERN]      list domains
+  \det[+] [PATTERN]      list foreign tables
+  \des[+] [PATTERN]      list foreign servers
+  \deu[+] [PATTERN]      list user mappings
+  \dew[+] [PATTERN]      list foreign-data wrappers
+  \df[antw][S+] [PATRN]  list [only agg/normal/trigger/window] functions
+  \dF[+]  [PATTERN]      list text search configurations
+  \dFd[+] [PATTERN]      list text search dictionaries
+

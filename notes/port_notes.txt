@@ -1,0 +1,187 @@
+ports
+9160  Cassandra  1.2.19
+# 11211 - memcache
+# 5432 - postgres  psql (9.3.24)   
+
+
+
+
+# 5672 - rabbitmq
+
+
+
+check what version are installed to get a docker container for each
+
+docker run -it -p 127.0.0.100:80:8080 -p 127.0.0.100:9160:9160 -p 127.0.0.100:11211:11211 -p 127.0.0.100:5432:5432 -p 127.0.0.100:5672:5672 reddit /bin/bash
+
+root@81d6db2c96e5:/home/reddit# cassandra -v
+1.2.19
+
+I started cassandra using cassandra & 
+not sure why service wouldn't work
+
+look for postgres and memcache
+mcrouter does not seem to be installable with apt-get
+
+
+
+
+DEBUG: upstart_path=/sbin/init
+DEBUG: initctl_path=/sbin/initctl
+ERROR: version of /sbin/initctl too old
+
+
+[ -x "$(which pip)" ] || easy_install pip
+pip install -U pip wheel setuptools coverage
+pushd $REDDIT_CODE/r2
+sudo python setup.py build
+python setup.py develop
+make
+ln -sf example.ini test.ini
+popd
+
+apt-get install curl
+
+curl https://bootstrap.pypa.io/2.7/get-pip.py  -o "get-pip.py"
+python get-pip.py
+pip install -U pip wheel setuptools coverage
+what about zookeeper
+
+
+
+Cassandra
+Needs:1.2.19
+Has: 2.1 earliest
+
+Maybe just try the latest
+
+docker network create mynetwork
+docker run --name some-cassandra --network mynetwork -v /home/parallels/saidit/data:/var/lib/cassandra -d cassandra:4.0
+
+docker run 
+postgres goes back to docker 9.5
+
+docker run --name mypostgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres:9.5
+
+memcache
+docker memcache
+docker run --name my-memcache -d memcached:1.6
+
+rabbitmq
+ docker run -d --hostname my-rabbit --name some-rabbit rabbitmq:3
+
+mcrouter
+doesn't seem to be doing very well
+
+docker run -d zookeeper:3.4
+
+if [ "$INSTALL_PROFILE" = "all" ]; then
+368     mkdir -p /var/opt/reddit/
+369     chown $REDDIT_USER:$REDDIT_GROUP /var/opt/reddit/
+370 
+371     mkdir -p /srv/www/pixel
+372     chown $REDDIT_USER:$REDDIT_GROUP /srv/www/pixel
+373     cp $REDDIT_SRC/reddit/r2/r2/public/static/pixel.png /srv/www/pixel
+374 
+
+375     if [ ! -f /etc/gunicorn.d/click.conf ]; then
+376         cat > /etc/gunicorn.d/click.conf <<CLICK
+377      CONFIG = {
+378     "mode": "wsgi",
+379     "working_dir": "$REDDIT_SRC/reddit/scripts",
+380     "user": "$REDDIT_USER",
+381     "group": "$REDDIT_USER",
+382     "args": (
+383         "--bind=unix:/var/opt/reddit/click.sock",
+384         "--workers=1",
+385         "tracker:application",
+386     ),
+387 }
+388 CLICK
+389     fi
+390     service gunicorn start
+391 fi
+392 
+[ ! -f /etc/gunicorn.d/click.conf ]
+
+if [ ! -f /etc/gunicorn.d/click.conf  ]; then
+    cat > /etc/gunicorn.d/click.conf <<CLICK
+CONFIG = {
+"mode": "wsgi",
+"working_dir": "$REDDIT_SRC/reddit/scripts",
+"user": "$REDDIT_USER",
+"group": "$REDDIT_USER",
+ "args": (
+         "--bind=unix:/var/opt/reddit/click.sock",
+         "--workers=1",
+         "tracker:application",
+   ),
+   } 	 
+CLICK
+fi
+
+
+
+if [ ! -f /etc/default/reddit ]; then
+    cat > /etc/default/reddit <<DEFAULT
+export REDDIT_ROOT=$REDDIT_SRC/reddit/r2
+export REDDIT_INI=$REDDIT_SRC/reddit/r2/run.ini
+export REDDIT_USER=$REDDIT_USER
+export REDDIT_GROUP=$REDDIT_GROUP
+export REDDIT_CONSUMER_CONFIG=$CONSUMER_CONFIG_ROOT
+alias wrap-job=$REDDIT_SRC/reddit/scripts/wrap-job
+alias manage-consumers=$REDDIT_SRC/reddit/scripts/manage-consumers
+DEFAULT
+fi
+
+
+haproxy docker requires a config file
+https://hub.docker.com/_/85c386ff-85a7-4d61-b309-5901f625c36f?tab=description
+
+redis-server
+
+###############################################################################
+# Wait for all the services to be up
+###############################################################################
+# check each port for connectivity
+echo "Waiting for services to be available, see source for port meanings..."
+# 11211 - memcache
+# 5432 - postgres
+# 5672 - rabbitmq
+sudo service memcached start
+sudo service postgresql start
+sudo service rabbitmq-server start
+if [ "$INSTALL_PROFILE" = "all" ]; then
+    for port in 11211 5432 5672; do
+        while ! nc -vz localhost $port; do
+            sleep 1
+        done
+    done
+elif [ "$INSTALL_PROFILE" = "app" ]; then
+    sudo service memcached start
+    while ! nc -vz localhost 11211; do
+        sleep 1
+    done
+fi
+
+ports here
+
+POSTGRES_PASSWORD=mysecretpassword -d postgres:9.5
+
+
+sudo apt-get -y install postgresql-client  
+psql -h database -p 5432 -U reddit -W -d reddit
+
+
+if [ $IS_DATABASE_CREATED -ne 1 ]; then
+    cat <<PGSCRIPT | sudo -u reddit psql
+CREATE DATABASE reddit WITH ENCODING = 'utf8' TEMPLATE template0 LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8';
+CREATE USER reddit WITH PASSWORD 'password';
+PGSCRIPT
+fi
+
+https://stackoverflow.com/questions/19674456/run-postgresql-queries-from-the-command-line
+PGPASSWORD=password
+psql -U reddit -d reddit -c 'SELECT * FROM mytable'
+
+

@@ -86,6 +86,8 @@ $RUNDIR/install_zookeeper.sh
 ###############################################################################
 
 [ -x "$(which pip)" ] || easy_install pip
+curl https://bootstrap.pypa.io/2.7/get-pip.py  -o "get-pip.py"
+python get-pip.py
 pip install -U pip wheel setuptools coverage
 pushd $REDDIT_CODE/r2
 sudo python setup.py build
@@ -103,7 +105,7 @@ if [ "$ENVIRONMENT" == "vagrant" ]; then
     $RUNDIR/install_services.sh
     # travis doesn't have mcrouter as a possible service, so we need to
     # be able to test without that running
-    service mcrouter stop
+    # service mcrouter stop
     # Configure PostgreSQL
     $RUNDIR/setup_postgres.sh
     # Configure Cassandra

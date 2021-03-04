@@ -28,17 +28,19 @@ source $RUNDIR/install.cfg
 ###############################################################################
 # Configure PostgreSQL
 ###############################################################################
-SQL="SELECT COUNT(1) FROM pg_catalog.pg_database WHERE datname = 'reddit';"
-IS_DATABASE_CREATED=$(sudo -u postgres psql -t -c "$SQL")
+#SQL="SELECT COUNT(1) FROM pg_catalog.pg_database WHERE datname = 'reddit';"
+#IS_DATABASE_CREATED=$(sudo -u postgres psql -t -c "$SQL")
 
-if [ $IS_DATABASE_CREATED -ne 1 ]; then
-    cat <<PGSCRIPT | sudo -u postgres psql
-CREATE DATABASE reddit WITH ENCODING = 'utf8' TEMPLATE template0 LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8';
-CREATE USER reddit WITH PASSWORD 'password';
-PGSCRIPT
-fi
+#locale-gen en_US.UTF-8 
 
-sudo -u postgres psql reddit <<FUNCTIONSQL
+#if [ $IS_DATABASE_CREATED -ne 1 ]; then
+#    cat <<PGSCRIPT | sudo -u postgres psql
+#CREATE DATABASE reddit WITH ENCODING = 'utf8' TEMPLATE template0 LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8';
+#CREATE USER reddit WITH PASSWORD 'password';
+#PGSCRIPT
+#fi
+
+sudo -u postgres -h database psql reddit <<FUNCTIONSQL
 create or replace function hot(ups integer, downs integer, date timestamp with time zone) returns numeric as \$\$
     select round(cast(log(greatest(abs((\$1 * 2) + \$2), 1)) * sign((\$1 * 2) + \$2) + (date_part('epoch', \$3) - 1134028003) / 45000.0 as numeric), 7)
 \$\$ language sql immutable;

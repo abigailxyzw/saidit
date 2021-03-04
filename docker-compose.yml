@@ -1,0 +1,19 @@
+version: '3'
+services:
+  web:
+    image: reddit 
+    restart: always
+    ports:
+      - 8088:80
+    links:
+      - database:reddit
+  database:
+    image: postgres:9.5
+    restart: always
+    ports: 
+      - 5432:5432
+    environment:
+      # @see https://phabricator.wikimedia.org/source/mediawiki/browse/master/includes/DefaultSettings.php
+      POSTGRES_USER: reddit  
+      POSTGRES_PASSWORD: password 
+      POSTGRES_DB : reddit 

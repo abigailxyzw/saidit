@@ -113,17 +113,17 @@ $RUNDIR/install_apt.sh
 $RUNDIR/install_npm.sh
 
 # install cassandra from datastax
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    $RUNDIR/install_cassandra.sh
-else
-    echo "install profile $INSTALL_PROFILE: skipping cassandra install"
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    $RUNDIR/install_cassandra.sh
+#else
+#    echo "install profile $INSTALL_PROFILE: skipping cassandra install"
+#fi
 
 # install zookeeper
-$RUNDIR/install_zookeeper.sh
+#$RUNDIR/install_zookeeper.sh
 
 # install services (rabbitmq, postgres, memcached, etc.)
-$RUNDIR/install_services.sh
+#$RUNDIR/install_services.sh
 
 ###############################################################################
 # Install the reddit source repositories
@@ -180,22 +180,23 @@ clone_reddit_repo snudown libertysoft3/snudown
 
 # Configure Cassandra
 
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    $RUNDIR/setup_cassandra.sh
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    $RUNDIR/setup_cassandra.sh
+#fi
 
 # Configure PostgreSQL
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    $RUNDIR/setup_postgres.sh
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    $RUNDIR/setup_postgres.sh
+#fi
 
 # Configure mcrouter
-$RUNDIR/setup_mcrouter.sh
+# can't install with apt-get
+#$RUNDIR/setup_mcrouter.sh
 
 # Configure RabbitMQ
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    $RUNDIR/setup_rabbitmq.sh
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    $RUNDIR/setup_rabbitmq.sh
+#fi
 
 ###############################################################################
 # Install and configure the reddit code
@@ -335,20 +336,20 @@ helper-script /usr/local/bin/reddit-shell <<REDDITSHELL
 exec paster --plugin=r2 shell $REDDIT_SRC/reddit/r2/run.ini
 REDDITSHELL
 
-helper-script /usr/local/bin/reddit-start <<REDDITSTART
+#helper-script /usr/local/bin/reddit-start <<REDDITSTART
 #!/bin/bash
-initctl emit reddit-start
-REDDITSTART
+#initctl emit reddit-start
+#REDDITSTART
 
-helper-script /usr/local/bin/reddit-stop <<REDDITSTOP
+#helper-script /usr/local/bin/reddit-stop <<REDDITSTOP
 #!/bin/bash
-initctl emit reddit-stop
-REDDITSTOP
+#initctl emit reddit-stop
+#REDDITSTOP
 
-helper-script /usr/local/bin/reddit-restart <<REDDITRESTART
+#helper-script /usr/local/bin/reddit-restart <<REDDITRESTART
 #!/bin/bash
-initctl emit reddit-restart TARGET=${1:-all}
-REDDITRESTART
+#initctl emit reddit-restart TARGET=${1:-all}
+#REDDITRESTART
 
 helper-script /usr/local/bin/reddit-flush <<REDDITFLUSH
 #!/bin/bash
@@ -485,8 +486,9 @@ server {
 SSL
 
 # SSL stuff
+#change to 16 for run through? back to 2048 after
 if [ ! -f /etc/nginx/dhparam.pem ]; then
-    openssl dhparam -out /etc/nginx/dhparam.pem 2048
+    openssl dhparam -out /etc/nginx/dhparam.pem 16
 fi
 
 # remove the default nginx site that may conflict with haproxy
@@ -503,138 +505,51 @@ mkdir -p /var/log/nginx/traffic
 ln -nsf $REDDIT_SRC/reddit/r2/development.ini $REDDIT_SRC/reddit/scripts/production.ini
 
 service nginx restart
-
-###############################################################################
-# haproxy
-###############################################################################
-if [ -e /etc/haproxy/haproxy.cfg ]; then
-    BACKUP_HAPROXY=$(mktemp /etc/haproxy/haproxy.cfg.XXX)
-    echo "Backing up /etc/haproxy/haproxy.cfg to $BACKUP_HAPROXY"
-    cat /etc/haproxy/haproxy.cfg > $BACKUP_HAPROXY
-fi
-
-# make sure haproxy is enabled
-cat > /etc/default/haproxy <<DEFAULT
-ENABLED=1
-DEFAULT
-
-# configure haproxy
-cat > /etc/haproxy/haproxy.cfg <<HAPROXY
-global
-    maxconn 350
-
-frontend frontend
-    mode http
-
-    bind 0.0.0.0:80
-    bind 127.0.0.1:8080
-
-    timeout client 24h
-    option forwardfor except 127.0.0.1
-    option httpclose
-
-    # make sure that requests have x-forwarded-proto: https iff tls
-    reqidel ^X-Forwarded-Proto:.*
-    acl is-ssl dst_port 8080
-    reqadd X-Forwarded-Proto:\ https if is-ssl
-
-    # send websockets to the websocket service
-    acl is-websocket hdr(Upgrade) -i WebSocket
-    use_backend websockets if is-websocket
-
-    # send media stuff to the local nginx
-    acl is-media path_beg /media/
-    use_backend media if is-media
-
-    # send pixel stuff to local nginx
-    acl is-pixel path_beg /pixel/
-    acl is-click path_beg /click
-    use_backend pixel if is-pixel || is-click
-
-    default_backend reddit
-
-backend reddit
-    mode http
-    timeout connect 4000
-    timeout server 30000
-    timeout queue 60000
-    balance roundrobin
-
-    server app01-8001 localhost:8001 maxconn 30
-
-backend websockets
-    mode http
-    timeout connect 4s
-    timeout server 24h
-    balance roundrobin
-
-    server websockets localhost:9001 maxconn 250
-
-backend media
-    mode http
-    timeout connect 4000
-    timeout server 30000
-    timeout queue 60000
-    balance roundrobin
-
-    server nginx localhost:9000 maxconn 20
-
-backend pixel
-    mode http
-    timeout connect 4000
-    timeout server 30000
-    timeout queue 60000
-    balance roundrobin
-
-    server nginx localhost:8082 maxconn 20
-HAPROXY
-
-# this will start it even if currently stopped
-service haproxy restart
+##removed haproxy stuff##
 
 ###############################################################################
 # websocket service
 ###############################################################################
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    if [ ! -f /etc/init/reddit-websockets.conf ]; then
-        cat > /etc/init/reddit-websockets.conf << UPSTART_WEBSOCKETS
-description "websockets service"
-
-stop on runlevel [!2345] or reddit-restart all or reddit-restart websockets
-start on runlevel [2345] or reddit-restart all or reddit-restart websockets
-
-respawn
-respawn limit 10 5
-kill timeout 15
-
-limit nofile 65535 65535
-
-exec baseplate-serve2 --bind localhost:9001 $REDDIT_SRC/websockets/example.ini
-UPSTART_WEBSOCKETS
-    fi
-    service reddit-websockets restart
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    if [ ! -f /etc/init/reddit-websockets.conf ]; then
+#        cat > /etc/init/reddit-websockets.conf << UPSTART_WEBSOCKETS
+#description "websockets service"
+#
+#stop on runlevel [!2345] or reddit-restart all or reddit-restart websockets
+#start on runlevel [2345] or reddit-restart all or reddit-restart websockets
+#
+#respawn
+#respawn limit 10 5
+#kill timeout 15
+#
+#limit nofile 65535 65535
+#
+#exec baseplate-serve2 --bind localhost:9001 $REDDIT_SRC/websockets/example.ini
+#UPSTART_WEBSOCKETS
+#    fi
+#    service reddit-websockets restart
+#fi
 
 ###############################################################################
 # activity service
 ###############################################################################
-if [ "$INSTALL_PROFILE" = "all" ]; then
-    if [ ! -f /etc/init/reddit-activity.conf ]; then
-        cat > /etc/init/reddit-activity.conf << UPSTART_ACTIVITY
-description "activity service"
-
-stop on runlevel [!2345] or reddit-restart all or reddit-restart activity
-start on runlevel [2345] or reddit-restart all or reddit-restart activity
-
-respawn
-respawn limit 10 5
-kill timeout 15
-
-exec baseplate-serve2 --bind localhost:9002 $REDDIT_SRC/activity/example.ini
-UPSTART_ACTIVITY
-    fi
-    service reddit-activity restart
-fi
+#if [ "$INSTALL_PROFILE" = "all" ]; then
+#    if [ ! -f /etc/init/reddit-activity.conf ]; then
+#        cat > /etc/init/reddit-activity.conf << UPSTART_ACTIVITY
+#description "activity service"
+#
+#stop on runlevel [!2345] or reddit-restart all or reddit-restart activity
+#start on runlevel [2345] or reddit-restart all or reddit-restart activity
+#
+#respawn
+#respawn limit 10 5
+#kill timeout 15
+#
+#exec baseplate-serve2 --bind localhost:9002 $REDDIT_SRC/activity/example.ini
+#UPSTART_ACTIVITY
+#    fi
+#    service reddit-activity restart
+#fi
 
 ###############################################################################
 # geoip service
